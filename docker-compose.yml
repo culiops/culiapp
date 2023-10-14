@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  app:
+    command: php artisan serve --host=0.0.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: culiops/culiapp:v1.0.0
+    volumes:
+      - .:/code
+    working_dir: /code
+    ports:
+      - 8001:8000
+    environment:
+      - APP_KEY=base64:Os36Q/0P32s+sBNIcjIeKSfPeXtdhqGqbStmgbTputg=
+      - DB_HOST=mysql
+      - DB_DATABASE=culiapp
+      - DB_USERNAME=culiapp
+      - DB_PASSWORD=culiapp
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mariadb:10.11
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized"
+        ]
+    environment:
+      MYSQL_DATABASE: culiapp
+      MYSQL_USER: culiapp
+      MYSQL_PASSWORD: culiapp
+      MYSQL_ROOT_PASSWORD: 123456
+      MARIADB_MYSQL_LOCALHOST_USER: true
+
+volumes:
+  mysql:
